@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Sudoku Solver")]
-[assembly: AssemblyDescription("Program used to solve any 9x9 sudoku puzzle")]
+[assembly: AssemblyDescription("Program used to solve any 9x9 sudoku puzzle. Enter the puzzles given values and then check the \"Lock Given\" box.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Vandolis")]
 [assembly: AssemblyProduct( "Sudoku Solver" )]

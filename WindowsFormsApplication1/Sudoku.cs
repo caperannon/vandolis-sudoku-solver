@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace WindowsFormsApplication1
+namespace SudokuSolver
 {
     class SudokuPuzzle
     {
@@ -299,13 +299,13 @@ namespace WindowsFormsApplication1
                 // Handle debug output
                 if ( Verbose )
                 {
-                    Console.Write( "[P-SQU]The numbers not found for square #" + square + " are: " );
+                    String str = "[P-SQU]The numbers not found for square #" + square + " are: ";
                     notFound.Sort();
                     foreach ( int iter in notFound )
                     {
-                        Console.Write( iter + ", " );
+                        str += iter + ", ";
                     }
-                    Console.Write( "\n" );
+                    SudokuSolverForm.Output.Add( str + "\n" );
                 }
 
                 // Iterate through the 3x3 array again
@@ -322,7 +322,7 @@ namespace WindowsFormsApplication1
                                 Puzzle[x + xOffset, y + yOffset].Value = notFound[0];
 
                                 if ( Verbose )
-                                    Console.Write( "[SET][P-SQU] Setting a value at X: " + ( x + xOffset ) + " Y: " + ( y + yOffset ) + " with value: " + notFound[0] + "\n" );
+                                    SudokuSolverForm.Output.Add( "[SET][P-SQU] Setting a value at X: " + ( x + xOffset ) + " Y: " + ( y + yOffset ) + " with value: " + notFound[0] + "\n" );
 
                                 // Rerun it
                                 breakAll = true;
@@ -333,7 +333,7 @@ namespace WindowsFormsApplication1
                                 Puzzle[x + xOffset, y + yOffset].setPossibly( notFound );
 
                                 if ( Verbose )
-                                    Console.Write( "[P-SQU] Cell at X: " + ( x + xOffset ) + " Y: " + ( y + yOffset ) + " can be: " + Puzzle[x + xOffset, y + yOffset].getPossiblyText() + "\n" );
+                                    SudokuSolverForm.Output.Add( "[P-SQU] Cell at X: " + ( x + xOffset ) + " Y: " + ( y + yOffset ) + " can be: " + Puzzle[x + xOffset, y + yOffset].getPossiblyText() + "\n" );
                             }
 
                         }
@@ -379,13 +379,13 @@ namespace WindowsFormsApplication1
                 // Handle debug output
                 if ( Verbose )
                 {
-                    Console.Write( "[P-COL] The numbers found in column #" + x + " are: " );
+                    String str = "[P-COL] The numbers found in column #" + x + " are: ";
                     found.Sort();
                     foreach ( int iter in found )
                     {
-                        Console.Write( iter + ", " );
+                        str+= iter + ", " ;
                     }
-                    Console.Write( "\n" );
+                    SudokuSolverForm.Output.Add( str + "\n" );
                 }
 
                 // Iterate through the entire column again
@@ -400,14 +400,14 @@ namespace WindowsFormsApplication1
                         }
 
                         if ( Verbose )
-                            Console.Write( "[P-COL] Cell (after) at X: " + x + " Y: " + y + " can be: " + Puzzle[x, y].getPossiblyText() + "\n" );
+                            SudokuSolverForm.Output.Add( "[P-COL] Cell (after) at X: " + x + " Y: " + y + " can be: " + Puzzle[x, y].getPossiblyText() + "\n" );
 
                         // If the cell only has one possibility then set its value to it
                         if ( Puzzle[x, y].getPossibly().Count == 1 )
                         {
                             // Debug output
                             if ( Verbose )
-                                Console.Write( "[SET][P-COL] Setting a value at X: " + x + " Y: " + y + " with value: " + Puzzle[x, y].getPossibly()[0] + "\n" );
+                                SudokuSolverForm.Output.Add( "[SET][P-COL] Setting a value at X: " + x + " Y: " + y + " with value: " + Puzzle[x, y].getPossibly()[0] + "\n" );
 
                             // Set value
                             Puzzle[x, y].Value = Puzzle[x, y].getPossibly()[0];
@@ -456,13 +456,13 @@ namespace WindowsFormsApplication1
                 // Handle debug output
                 if ( Verbose )
                 {
-                    Console.Write( "[P-ROW] The numbers found in row #" + y + " are: " );
+                    String str = "[P-ROW] The numbers found in row #" + y + " are: ";
                     found.Sort();
                     foreach ( int iter in found )
                     {
-                        Console.Write( iter + ", " );
+                        str+= iter + ", " ;
                     }
-                    Console.Write( "\n" );
+                    SudokuSolverForm.Output.Add( str+"\n" );
                 }
 
                 // Iterate through the row again
@@ -477,14 +477,14 @@ namespace WindowsFormsApplication1
                         }
 
                         if ( Verbose )
-                            Console.Write( "[P-ROW] Cell (after) at X: " + x + " Y: " + y + " can be: " + Puzzle[x, y].getPossiblyText() + "\n" );
+                            SudokuSolverForm.Output.Add( "[P-ROW] Cell (after) at X: " + x + " Y: " + y + " can be: " + Puzzle[x, y].getPossiblyText() + "\n" );
 
                         // If the cell only has one possiblitiy then go ahead and set its value to it
                         if ( Puzzle[x, y].getPossibly().Count == 1 )
                         {
                             // Debug output
                             if ( Verbose )
-                                Console.Write( "[SET][P-ROW] Setting a value at X: " + x + " Y: " + y + " with value: " + Puzzle[x, y].getPossibly()[0] + "\n" );
+                                SudokuSolverForm.Output.Add( "[SET][P-ROW] Setting a value at X: " + x + " Y: " + y + " with value: " + Puzzle[x, y].getPossibly()[0] + "\n" );
 
                             // Set value
                             Puzzle[x, y].Value = Puzzle[x, y].getPossibly()[0];
@@ -606,7 +606,7 @@ namespace WindowsFormsApplication1
                 // Debug output
                 if ( Verbose )
                 {
-                    Console.Write( "[E-SQU] Counts for square #" + square + " are: [1, " + counts[1] + "] [2, " + counts[2] + "] [3, " + counts[3] + "] [4, " + counts[4] +
+                    SudokuSolverForm.Output.Add( "[E-SQU] Counts for square #" + square + " are: [1, " + counts[1] + "] [2, " + counts[2] + "] [3, " + counts[3] + "] [4, " + counts[4] +
                         "] [5, " + counts[5] + "] [6, " + counts[6] + "] [7, " + counts[7] + "] [8, " + counts[8] + "] [9, " + counts[9] + "]\n" );
                 }
 
@@ -631,7 +631,7 @@ namespace WindowsFormsApplication1
                             {
                                 // Debug output
                                 if ( Verbose )
-                                    Console.Write( "[SET][E-SQU] Setting a value at X: " + ( x + xOffset ) + " Y: " + ( y + yOffset ) + " with value: " + key + "\n" );
+                                    SudokuSolverForm.Output.Add( "[SET][E-SQU] Setting a value at X: " + ( x + xOffset ) + " Y: " + ( y + yOffset ) + " with value: " + key + "\n" );
 
                                 // Set the value
                                 Puzzle[x + xOffset, y + yOffset].Value = key;
@@ -684,7 +684,7 @@ namespace WindowsFormsApplication1
                 // Debug output
                 if ( Verbose )
                 {
-                    Console.Write( "[E-COL] Counts for column #" + x + " are: [1, " + counts[1] + "] [2, " + counts[2] + "] [3, " + counts[3] + "] [4, " + counts[4] +
+                    SudokuSolverForm.Output.Add( "[E-COL] Counts for column #" + x + " are: [1, " + counts[1] + "] [2, " + counts[2] + "] [3, " + counts[3] + "] [4, " + counts[4] +
                         "] [5, " + counts[5] + "] [6, " + counts[6] + "] [7, " + counts[7] + "] [8, " + counts[8] + "] [9, " + counts[9] + "]\n" );
                 }
 
@@ -707,7 +707,7 @@ namespace WindowsFormsApplication1
                         {
                             // Debug output
                             if ( Verbose )
-                                Console.Write( "[SET][E-COL] Setting a value at X: " + x + " Y: " + y + " with value: " + key + "\n" );
+                                SudokuSolverForm.Output.Add( "[SET][E-COL] Setting a value at X: " + x + " Y: " + y + " with value: " + key + "\n" );
 
                             // Set the cells value to the key
                             Puzzle[x, y].Value = key;
@@ -758,7 +758,7 @@ namespace WindowsFormsApplication1
                 // Debug output
                 if ( Verbose )
                 {
-                    Console.Write( "[E-ROW] Counts for row #" + y + " are: [1, " + counts[1] + "] [2, " + counts[2] + "] [3, " + counts[3] + "] [4, " + counts[4] +
+                    SudokuSolverForm.Output.Add( "[E-ROW] Counts for row #" + y + " are: [1, " + counts[1] + "] [2, " + counts[2] + "] [3, " + counts[3] + "] [4, " + counts[4] +
                         "] [5, " + counts[5] + "] [6, " + counts[6] + "] [7, " + counts[7] + "] [8, " + counts[8] + "] [9, " + counts[9] + "]\n" );
                 }
 
@@ -781,7 +781,7 @@ namespace WindowsFormsApplication1
                         {
                             // Debug output
                             if ( Verbose )
-                                Console.Write( "[SET][E-ROW] Setting a value at X: " + x + " Y: " + y + " with value: " + key + "\n" );
+                                SudokuSolverForm.Output.Add( "[SET][E-ROW] Setting a value at X: " + x + " Y: " + y + " with value: " + key + "\n" );
 
                             Puzzle[x, y].Value = key; // Set the cells value to the key
 
@@ -832,7 +832,7 @@ namespace WindowsFormsApplication1
 
                             if ( Verbose )
                             {
-                                Console.Write( "[GUESS] Candidate found at X: " + xPos + " Y: " + yPos + " at a threshold of " + threshold +
+                                SudokuSolverForm.Output.Add( "[GUESS] Candidate found at X: " + xPos + " Y: " + yPos + " at a threshold of " + threshold +
                                     ". The possibilities are: " + puzzle[x, y].getPossiblyText() + "\n" );
                             }
 
@@ -867,7 +867,7 @@ namespace WindowsFormsApplication1
 
                 if ( Verbose )
                 {
-                    Console.Write( "[GUESS] Making a guess with X: " + xPos + " Y: " + yPos + " = " + iter + "..... " );
+                    SudokuSolverForm.Output.Add( "[GUESS] Making a guess with X: " + xPos + " Y: " + yPos + " = " + iter + "..... " );
                 }
 
                 SudokuPuzzle guessPuzzle = new SudokuPuzzle( guessed, false );
@@ -875,13 +875,13 @@ namespace WindowsFormsApplication1
                 if ( guessPuzzle.Solved )
                 {
                     if ( Verbose )
-                        Console.Write( "Guess Succeeded! Setting values...\n" );
+                        SudokuSolverForm.Output.Add( "Guess Succeeded! Setting values...\n" );
                     Puzzle = guessPuzzle.Puzzle;
                     Solved = true;
                     break;
                 }
                 else if ( Verbose )
-                    Console.Write( "Guess Failed, moving on to next guess.\n" );
+                    SudokuSolverForm.Output.Add( "Guess Failed, moving on to next guess.\n" );
             }
         }
 
