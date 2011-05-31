@@ -10,15 +10,15 @@ namespace SudokuSolver
         public SudokuCell[,] Puzzle { get; private set; } // Actual array of cells
         public Boolean Verbose { private get; set; } // Var that controls the level of console output
         public Boolean Solved { get; private set; } // Var to tell if the puzzle was solved or not
-        public int LoopCount { get; private set; } // Var that keeps track of the number of loops done in the solve 
         private Boolean Guessing { get; set; }
+        private enum Status { Value_Set, Populate, Evaluate, Guess, Solved, Stuck }
+        private static int GuessedPuzzles { get; set; }
 
         /// <summary>
         /// Ctor which takes an already assembled array of SudokuCells and tries to solve it. Deep copies
         /// </summary>
         /// <param name="puzzle">Puzzle to take</param>
-        /// <param name="guessing">Whether or not this is a guessed puzzle</param>
-        public SudokuPuzzle( SudokuCell[,] puzzle, Boolean guessing )
+        public SudokuPuzzle( SudokuCell[,] puzzle )
         {
             Puzzle = new SudokuCell[9, 9];
 
@@ -31,8 +31,6 @@ namespace SudokuSolver
                     Puzzle[x, y].setPossibly( puzzle[x, y].getPossibly() );
                 }
             }
-
-            Guessing = guessing;
 
             solve();
         }
@@ -57,6 +55,9 @@ namespace SudokuSolver
         {
             Puzzle = transform( puzzle );
             Verbose = verbose;
+
+            GuessedPuzzles = 0;
+
             solve();
         }
 
@@ -65,40 +66,48 @@ namespace SudokuSolver
         /// </summary>
         public void solve()
         {
-            // Start off the chain
-            // P-SQU -> P-COL -> P-ROW -> E-SQU -> E-COL -> E-ROW -> Done?
-            populatePossibilitiesSquare();
+            // P-SQU -> P-COL -> P-ROW -> E-SQU -> E-COL -> E-ROW -> Guess -> Done/Stuck
+            Status status = Status.Value_Set;
+
+            do
+            {
+                switch ( status )
+                {
+                    case Status.Value_Set:
+                        Solved = isValid( Puzzle );
+                        if ( !Solved )
+                            status = Status.Populate;
+                        else
+                            status = Status.Solved;
+                        break;
+                    case Status.Populate:
+                        if ( ( status = populatePossibilitiesSquare() ) == Status.Populate )
+                            if ( ( status = populatePossibilitiesColumn() ) == Status.Populate )
+                                if ( ( status = populatePossibilitiesRow() ) == Status.Populate )
+                                    status = Status.Evaluate;
+                        break;
+                    case Status.Evaluate:
+                        if ( ( status = evaluatePossibilitiesSquare() ) == Status.Evaluate )
+                            if ( ( status = evaluatePossibilitiesColumn() ) == Status.Evaluate )
+                                if ( ( status = evaluatePossibilitiesRow() ) == Status.Evaluate )
+                                    status = Status.Guess;
+                        break;
+                    case Status.Guess:
+                        status = guess( Puzzle );
+                        break;
+                    case Status.Solved:
+                        break;
+                    case Status.Stuck:
+                        break;
+                    default:
+                        break;
+                }
+            } while ( status != Status.Solved && status != Status.Stuck );
 
             if ( Verbose )
             {
-                solveText();
+                SudokuSolverForm.Verbose_Add( solveText() );
             }
-            /*
-            do
-            {
-                // Populate the cells, also inserts singles into the puzzle
-                populatePossibilitiesSquare();
-                populatePossibilitiesColumn();
-                populatePossibilitiesRow();
-
-                // Evaluate each areas and cells possibilities to see if there are any sure things
-                evaluatePossibilitiesSquare();
-                evaluatePossibilitiesColumn();
-                evaluatePossibilitiesRow();
-
-                // Check through all of the cells to see if any equal zero, if it finds none then solved will stay true and exit the loop
-                Solved = true;
-                for ( int x = 0; x < 9; x++ )
-                {
-                    for ( int y = 0; y < 9; y++ )
-                    {
-                        if ( Puzzle[x, y].Value == 0 ) Solved = false;
-                    }
-                }
-
-                LoopCount++;
-            }
-            while ( !Solved && LoopCount != 70 ); // We can assume that after 70 loops it will have stalled and is not making progress.*/
         }
 
         /// <summary>
@@ -108,7 +117,7 @@ namespace SudokuSolver
         public String solveText()
         {
             if ( Solved )
-                return "The solution to the puzzle took " + LoopCount + " loops and is:\n" + this.ToString();
+                return "The solution to the puzzle is:\n" + this.ToString();
             else
                 return "I couldn't finish the problem, this is what I have so far:\n" + this.ToString();
         }
@@ -223,11 +232,9 @@ namespace SudokuSolver
         /// <summary>
         /// Begins the population by filling each cell based on its surrounding square. Inserts the maximum amount of possibilities.
         /// </summary>
-        private void populatePossibilitiesSquare()
+        /// <returns>Status. Populate if nothing is set, Value_Set if a value is set</returns>
+        private Status populatePossibilitiesSquare()
         {
-            // Used to rerun without repitition
-            Boolean breakAll = false;
-
             // These values hold offsets that allow you to act as if the 9x9 array is made of multiple 3x3 arrays
             int xOffset = 0, yOffset = 0;
 
@@ -305,7 +312,7 @@ namespace SudokuSolver
                     {
                         str += iter + ", ";
                     }
-                    SudokuSolverForm.Output.Add( str + "\n" );
+                    SudokuSolverForm.Verbose_Add( str + "\n" );
                 }
 
                 // Iterate through the 3x3 array again
@@ -322,45 +329,32 @@ namespace SudokuSolver
                                 Puzzle[x + xOffset, y + yOffset].Value = notFound[0];
 
                                 if ( Verbose )
-                                    SudokuSolverForm.Output.Add( "[SET][P-SQU] Setting a value at X: " + ( x + xOffset ) + " Y: " + ( y + yOffset ) + " with value: " + notFound[0] + "\n" );
+                                    SudokuSolverForm.Verbose_Add( "[SET][P-SQU] Setting a value at X: " + ( x + xOffset ) + " Y: " + ( y + yOffset ) + " with value: " + notFound[0] + "\n" );
 
-                                // Rerun it
-                                breakAll = true;
-                                break;
+                                return Status.Value_Set;
                             }
                             else
                             {
+                                // Set the cells possibilities
                                 Puzzle[x + xOffset, y + yOffset].setPossibly( notFound );
 
                                 if ( Verbose )
-                                    SudokuSolverForm.Output.Add( "[P-SQU] Cell at X: " + ( x + xOffset ) + " Y: " + ( y + yOffset ) + " can be: " + Puzzle[x + xOffset, y + yOffset].getPossiblyText() + "\n" );
+                                    SudokuSolverForm.Verbose_Add( "[P-SQU] Cell at X: " + ( x + xOffset ) + " Y: " + ( y + yOffset ) + " can be: " + Puzzle[x + xOffset, y + yOffset].getPossiblyText() + "\n" );
                             }
-
                         }
                     }
-
-                    // Check for breakAll
-                    if ( breakAll ) break;
                 }
-
-                // Check for breakAll
-                if ( breakAll ) break;
             }
 
-            // If breakAll then rerun P-SQU, otherwise move on in the chain to P-COL
-            if ( breakAll )
-                populatePossibilitiesSquare();
-            else
-                populatePossibilitiesColumn();
+            return Status.Populate;
         }
 
         /// <summary>
         /// Adjusts each cells possibilities based on its column. Only removes possibilities so it must be ran after populatePossibilitiesSquare
         /// </summary>
-        private void populatePossibilitiesColumn()
+        /// <returns>Status. Populate if nothing is set, Value_Set if a value is set</returns>
+        private Status populatePossibilitiesColumn()
         {
-            Boolean breakAll = false;
-
             // Columns
             for ( int x = 0; x < 9; x++ )
             {
@@ -383,9 +377,9 @@ namespace SudokuSolver
                     found.Sort();
                     foreach ( int iter in found )
                     {
-                        str+= iter + ", " ;
+                        str += iter + ", ";
                     }
-                    SudokuSolverForm.Output.Add( str + "\n" );
+                    SudokuSolverForm.Verbose_Add( str + "\n" );
                 }
 
                 // Iterate through the entire column again
@@ -400,43 +394,33 @@ namespace SudokuSolver
                         }
 
                         if ( Verbose )
-                            SudokuSolverForm.Output.Add( "[P-COL] Cell (after) at X: " + x + " Y: " + y + " can be: " + Puzzle[x, y].getPossiblyText() + "\n" );
+                            SudokuSolverForm.Verbose_Add( "[P-COL] Cell (after) at X: " + x + " Y: " + y + " can be: " + Puzzle[x, y].getPossiblyText() + "\n" );
 
                         // If the cell only has one possibility then set its value to it
                         if ( Puzzle[x, y].getPossibly().Count == 1 )
                         {
                             // Debug output
                             if ( Verbose )
-                                SudokuSolverForm.Output.Add( "[SET][P-COL] Setting a value at X: " + x + " Y: " + y + " with value: " + Puzzle[x, y].getPossibly()[0] + "\n" );
+                                SudokuSolverForm.Verbose_Add( "[SET][P-COL] Setting a value at X: " + x + " Y: " + y + " with value: " + Puzzle[x, y].getPossibly()[0] + "\n" );
 
                             // Set value
                             Puzzle[x, y].Value = Puzzle[x, y].getPossibly()[0];
 
-                            // Rerun it
-                            breakAll = true;
-                            break;
+                            return Status.Value_Set;
                         }
                     }
                 }
-
-                // Check for breakAll
-                if ( breakAll ) break;
             }
 
-            // If breakAll then run back to P-SQU, otherwise continue the chain to P-ROW
-            if ( breakAll )
-                populatePossibilitiesSquare();
-            else
-                populatePossibilitiesRow();
+            return Status.Populate;
         }
 
         /// <summary>
         /// Adjusts each cells possibilities based on its row. Only removes possibilities so it must be ran after populatePossibilitiesSquare
         /// </summary>
-        private void populatePossibilitiesRow()
+        /// <returns>Status. Populate if nothing is set, Value_Set if a value is set</returns>
+        private Status populatePossibilitiesRow()
         {
-            Boolean breakAll = false;
-
             // Rows
             for ( int y = 0; y < 9; y++ )
             {
@@ -460,9 +444,9 @@ namespace SudokuSolver
                     found.Sort();
                     foreach ( int iter in found )
                     {
-                        str+= iter + ", " ;
+                        str += iter + ", ";
                     }
-                    SudokuSolverForm.Output.Add( str+"\n" );
+                    SudokuSolverForm.Verbose_Add( str + "\n" );
                 }
 
                 // Iterate through the row again
@@ -477,40 +461,31 @@ namespace SudokuSolver
                         }
 
                         if ( Verbose )
-                            SudokuSolverForm.Output.Add( "[P-ROW] Cell (after) at X: " + x + " Y: " + y + " can be: " + Puzzle[x, y].getPossiblyText() + "\n" );
+                            SudokuSolverForm.Verbose_Add( "[P-ROW] Cell (after) at X: " + x + " Y: " + y + " can be: " + Puzzle[x, y].getPossiblyText() + "\n" );
 
                         // If the cell only has one possiblitiy then go ahead and set its value to it
                         if ( Puzzle[x, y].getPossibly().Count == 1 )
                         {
                             // Debug output
                             if ( Verbose )
-                                SudokuSolverForm.Output.Add( "[SET][P-ROW] Setting a value at X: " + x + " Y: " + y + " with value: " + Puzzle[x, y].getPossibly()[0] + "\n" );
+                                SudokuSolverForm.Verbose_Add( "[SET][P-ROW] Setting a value at X: " + x + " Y: " + y + " with value: " + Puzzle[x, y].getPossibly()[0] + "\n" );
 
                             // Set value
                             Puzzle[x, y].Value = Puzzle[x, y].getPossibly()[0];
 
-                            // Rerun it
-                            breakAll = true;
-                            break;
+                            return Status.Value_Set;
                         }
                     }
                 }
-
-                // Check for breakAll
-                if ( breakAll ) break;
             }
 
-            // If breakall back to P-SQU otherwise E-SQU
-            if ( breakAll )
-                populatePossibilitiesSquare();
-            else
-                evaluatePossibilitiesSquare();
+            return Status.Populate;
         }
 
         /// <summary>
         /// ToString method for a puzzle. Outputs a string with formatted columns/rows of the values.
         /// </summary>
-        /// <returns>9 line long string containing only numbers and new lines</returns>
+        /// <returns>string containing only numbers and new lines</returns>
         public override String ToString()
         {
             String str = "";
@@ -530,10 +505,9 @@ namespace SudokuSolver
         /// <summary>
         /// Looks through each squares possibilities to see if there is a only one cell with a certain possibility
         /// </summary>
-        private void evaluatePossibilitiesSquare()
+        /// <returns>Status. Evaluate if nothing is set, Value_Set if a value is set</returns>
+        private Status evaluatePossibilitiesSquare()
         {
-            Boolean breakAll = false;
-
             // These values hold offsets that allow you to act as if the 9x9 array is made of multiple 3x3 arrays
             int xOffset = 0, yOffset = 0;
 
@@ -606,7 +580,7 @@ namespace SudokuSolver
                 // Debug output
                 if ( Verbose )
                 {
-                    SudokuSolverForm.Output.Add( "[E-SQU] Counts for square #" + square + " are: [1, " + counts[1] + "] [2, " + counts[2] + "] [3, " + counts[3] + "] [4, " + counts[4] +
+                    SudokuSolverForm.Verbose_Add( "[E-SQU] Counts for square #" + square + " are: [1, " + counts[1] + "] [2, " + counts[2] + "] [3, " + counts[3] + "] [4, " + counts[4] +
                         "] [5, " + counts[5] + "] [6, " + counts[6] + "] [7, " + counts[7] + "] [8, " + counts[8] + "] [9, " + counts[9] + "]\n" );
                 }
 
@@ -631,37 +605,27 @@ namespace SudokuSolver
                             {
                                 // Debug output
                                 if ( Verbose )
-                                    SudokuSolverForm.Output.Add( "[SET][E-SQU] Setting a value at X: " + ( x + xOffset ) + " Y: " + ( y + yOffset ) + " with value: " + key + "\n" );
+                                    SudokuSolverForm.Verbose_Add( "[SET][E-SQU] Setting a value at X: " + ( x + xOffset ) + " Y: " + ( y + yOffset ) + " with value: " + key + "\n" );
 
                                 // Set the value
                                 Puzzle[x + xOffset, y + yOffset].Value = key;
 
-                                // Rerun
-                                breakAll = true;
-                                break;
+                                return Status.Value_Set;
                             }
                         }
-
-                        if ( breakAll ) break;
                     }
-
-                    if ( breakAll ) break;
                 }
             }
 
-            if ( breakAll )
-                populatePossibilitiesSquare();
-            else
-                evaluatePossibilitiesColumn();
+            return Status.Evaluate;
         }
 
         /// <summary>
         /// Looks through each columns possibilities to see if there is a only one cell with a certain possibility
         /// </summary>
-        private void evaluatePossibilitiesColumn()
+        /// <returns>Status. Evaluate if nothing is set, Value_Set if a value is set</returns>
+        private Status evaluatePossibilitiesColumn()
         {
-            Boolean breakAll = false;
-
             for ( int x = 0; x < 9; x++ )
             {
                 // Set up the counts for the square
@@ -684,7 +648,7 @@ namespace SudokuSolver
                 // Debug output
                 if ( Verbose )
                 {
-                    SudokuSolverForm.Output.Add( "[E-COL] Counts for column #" + x + " are: [1, " + counts[1] + "] [2, " + counts[2] + "] [3, " + counts[3] + "] [4, " + counts[4] +
+                    SudokuSolverForm.Verbose_Add( "[E-COL] Counts for column #" + x + " are: [1, " + counts[1] + "] [2, " + counts[2] + "] [3, " + counts[3] + "] [4, " + counts[4] +
                         "] [5, " + counts[5] + "] [6, " + counts[6] + "] [7, " + counts[7] + "] [8, " + counts[8] + "] [9, " + counts[9] + "]\n" );
                 }
 
@@ -707,34 +671,26 @@ namespace SudokuSolver
                         {
                             // Debug output
                             if ( Verbose )
-                                SudokuSolverForm.Output.Add( "[SET][E-COL] Setting a value at X: " + x + " Y: " + y + " with value: " + key + "\n" );
+                                SudokuSolverForm.Verbose_Add( "[SET][E-COL] Setting a value at X: " + x + " Y: " + y + " with value: " + key + "\n" );
 
                             // Set the cells value to the key
                             Puzzle[x, y].Value = key;
 
-                            // Rerun
-                            breakAll = true;
-                            break;
+                            return Status.Value_Set;
                         }
                     }
-
-                    if ( breakAll ) break;
                 }
             }
 
-            if ( breakAll )
-                populatePossibilitiesSquare();
-            else
-                evaluatePossibilitiesRow();
+            return Status.Evaluate;
         }
 
         /// <summary>
         /// Looks through each rows possibilities to see if there is a only one cell with a certain possibility
         /// </summary>
-        private void evaluatePossibilitiesRow()
+        /// <returns>Status. Evaluate if nothing is set, Value_Set if a value is set</returns>
+        private Status evaluatePossibilitiesRow()
         {
-            Boolean breakAll = false;
-
             // Loop down
             for ( int y = 0; y < 9; y++ )
             {
@@ -758,7 +714,7 @@ namespace SudokuSolver
                 // Debug output
                 if ( Verbose )
                 {
-                    SudokuSolverForm.Output.Add( "[E-ROW] Counts for row #" + y + " are: [1, " + counts[1] + "] [2, " + counts[2] + "] [3, " + counts[3] + "] [4, " + counts[4] +
+                    SudokuSolverForm.Verbose_Add( "[E-ROW] Counts for row #" + y + " are: [1, " + counts[1] + "] [2, " + counts[2] + "] [3, " + counts[3] + "] [4, " + counts[4] +
                         "] [5, " + counts[5] + "] [6, " + counts[6] + "] [7, " + counts[7] + "] [8, " + counts[8] + "] [9, " + counts[9] + "]\n" );
                 }
 
@@ -781,33 +737,26 @@ namespace SudokuSolver
                         {
                             // Debug output
                             if ( Verbose )
-                                SudokuSolverForm.Output.Add( "[SET][E-ROW] Setting a value at X: " + x + " Y: " + y + " with value: " + key + "\n" );
+                                SudokuSolverForm.Verbose_Add( "[SET][E-ROW] Setting a value at X: " + x + " Y: " + y + " with value: " + key + "\n" );
 
                             Puzzle[x, y].Value = key; // Set the cells value to the key
 
-                            breakAll = true;
-                            break;
+                            return Status.Value_Set;
                         }
                     }
-
-                    if ( breakAll ) break;
                 }
             }
 
-            if ( breakAll )
-                populatePossibilitiesSquare();
-            else
-                Solved = isValid( Puzzle );
-
-            if ( !Solved && !Guessing )
-                bestGuess( Puzzle );
+            return Status.Evaluate;
         }
+
 
         /// <summary>
         /// Finds the lowest amount of repeated possibilities (2) and picks one, attempting to solve it. If the answer comes out valid it must be true.
         /// </summary>
-        /// <param name="sudokuPuzzle">Puzzle to test</param>
-        private void bestGuess( SudokuCell[,] puzzle )
+        /// <param name="puzzle">Puzzle to test</param>
+        /// <returns>Status. Solved or Stuck</returns>
+        private Status guess( SudokuCell[,] puzzle )
         {
             // These hold the position of the guessed cell and the value guessed
             int xPos = 0;
@@ -832,7 +781,7 @@ namespace SudokuSolver
 
                             if ( Verbose )
                             {
-                                SudokuSolverForm.Output.Add( "[GUESS] Candidate found at X: " + xPos + " Y: " + yPos + " at a threshold of " + threshold +
+                                SudokuSolverForm.Verbose_Add( "[GUESS] Candidate found at X: " + xPos + " Y: " + yPos + " at a threshold of " + threshold +
                                     ". The possibilities are: " + puzzle[x, y].getPossiblyText() + "\n" );
                             }
 
@@ -864,25 +813,27 @@ namespace SudokuSolver
 
                 // Insert the guess
                 guessed[xPos, yPos].Value = iter;
+                String str = "[GUESS] Making a guess with X: " + xPos + " Y: " + yPos + " = " + iter + "..... ";
 
-                if ( Verbose )
-                {
-                    SudokuSolverForm.Output.Add( "[GUESS] Making a guess with X: " + xPos + " Y: " + yPos + " = " + iter + "..... " );
-                }
-
-                SudokuPuzzle guessPuzzle = new SudokuPuzzle( guessed, false );
+                GuessedPuzzles++;
+                SudokuPuzzle guessPuzzle = new SudokuPuzzle( guessed );
 
                 if ( guessPuzzle.Solved )
                 {
                     if ( Verbose )
-                        SudokuSolverForm.Output.Add( "Guess Succeeded! Setting values...\n" );
+                        SudokuSolverForm.Verbose_Add( str + "Guess Succeeded, took " + GuessedPuzzles + " puzzles! Setting values...\n" );
                     Puzzle = guessPuzzle.Puzzle;
                     Solved = true;
-                    break;
+                    return Status.Solved;
                 }
                 else if ( Verbose )
-                    SudokuSolverForm.Output.Add( "Guess Failed, moving on to next guess.\n" );
+                {
+                    SudokuSolverForm.Verbose_Add( "Guess Failed, moving on to next guess.\n" );
+                }
             }
+
+            SudokuSolverForm.Verbose_Add( "[GUESS] Failed to find a solution\n" );
+            return Status.Stuck;
         }
 
         /// <summary>

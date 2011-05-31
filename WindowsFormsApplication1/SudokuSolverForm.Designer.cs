@@ -1,5 +1,8 @@
 ﻿namespace SudokuSolver
 {
+    /// <summary>
+    /// Form for the SudokuSolver
+    /// </summary>
     partial class SudokuSolverForm
     {
         /// <summary>
@@ -34,7 +37,7 @@
             this.Verbose_CheckBox = new System.Windows.Forms.CheckBox();
             this.Check_Button = new System.Windows.Forms.Button();
             this.Lock_CheckBox = new System.Windows.Forms.CheckBox();
-            this.Verbose_Output = new System.Windows.Forms.TextBox();
+            SudokuSolverForm.Verbose_Output = new System.Windows.Forms.TextBox();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -105,14 +108,14 @@
             // 
             // Verbose_Output
             // 
-            this.Verbose_Output.Font = new System.Drawing.Font( "Calibri", 6F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ( (byte) ( 0 ) ) );
-            this.Verbose_Output.Location = new System.Drawing.Point( 501, 30 );
-            this.Verbose_Output.Multiline = true;
-            this.Verbose_Output.Name = "Verbose_Output";
-            this.Verbose_Output.ReadOnly = true;
-            this.Verbose_Output.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.Verbose_Output.Size = new System.Drawing.Size( 312, 250 );
-            this.Verbose_Output.TabIndex = 16;
+            SudokuSolverForm.Verbose_Output.Font = new System.Drawing.Font( "Calibri", 6F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ( (byte) ( 0 ) ) );
+            SudokuSolverForm.Verbose_Output.Location = new System.Drawing.Point( 501, 30 );
+            SudokuSolverForm.Verbose_Output.Multiline = true;
+            SudokuSolverForm.Verbose_Output.Name = "Verbose_Output";
+            SudokuSolverForm.Verbose_Output.ReadOnly = true;
+            SudokuSolverForm.Verbose_Output.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+            SudokuSolverForm.Verbose_Output.Size = new System.Drawing.Size( 312, 250 );
+            SudokuSolverForm.Verbose_Output.TabIndex = 16;
             // 
             // menuStrip1
             // 
@@ -217,7 +220,7 @@
             this.AutoSize = true;
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.ClientSize = new System.Drawing.Size( 825, 286 );
-            this.Controls.Add( this.Verbose_Output );
+            this.Controls.Add( SudokuSolverForm.Verbose_Output );
             this.Controls.Add( this.Lock_CheckBox );
             this.Controls.Add( this.Check_Button );
             this.Controls.Add( this.Verbose_CheckBox );
@@ -261,7 +264,7 @@
         private System.Windows.Forms.CheckBox Verbose_CheckBox;
         private System.Windows.Forms.Button Check_Button;
         private System.Windows.Forms.CheckBox Lock_CheckBox;
-        private System.Windows.Forms.TextBox Verbose_Output;
+        private static System.Windows.Forms.TextBox Verbose_Output;
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem helpToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;

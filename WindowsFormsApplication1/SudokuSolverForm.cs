@@ -13,8 +13,15 @@ namespace SudokuSolver
     {
         private int[,] map = new int[9, 9];
         private List<BigSquare> Squares { get; set; }
+
+        /// <summary>
+        /// Holds a list of the Verbose output
+        /// </summary>
         public static List<String> Output { get; private set; }
 
+        /// <summary>
+        /// Default ctor.
+        /// </summary>
         public SudokuSolverForm()
         {
             InitializeComponent();
@@ -39,6 +46,19 @@ namespace SudokuSolver
             Verbose_Output.Visible = false;
         }
 
+        /// <summary>
+        /// Transfers the output from Output to the visable verbose output
+        /// </summary>
+        private static void Verbose_Update()
+        {
+            Verbose_Output.Lines = Output.ToArray();
+        }
+
+        /// <summary>
+        /// Method called when the solve button is pressed. Solves the puzzle, then sets the values on the grid
+        /// </summary>
+        /// <param name="sender">Button sender</param>
+        /// <param name="e">Eventargs</param>
         private void Solve_Click( object sender, EventArgs e )
         {
             // Solve 
@@ -47,9 +67,13 @@ namespace SudokuSolver
                 Squares[i].setValues( setup().getSquareValues( i ) );
             }
 
-            Verbose_Output.Lines = Output.ToArray();
+            Verbose_Update();
         }
 
+        /// <summary>
+        /// Used to setup the puzzle, returns the puzzle object. By default only reads the locked values
+        /// </summary>
+        /// <returns></returns>
         private SudokuPuzzle setup()
         {
             populateMap( true );
@@ -58,6 +82,10 @@ namespace SudokuSolver
             return new SudokuPuzzle( map, verbose );
         }
 
+        /// <summary>
+        /// Populates Map based on the values set in the grid.
+        /// </summary>
+        /// <param name="locked"></param>
         private void populateMap( Boolean locked )
         {
             int xOffSet = 0;
@@ -108,79 +136,13 @@ namespace SudokuSolver
                     }
                 }
             }
-
-            /*
-            Console.Write("The Matrix is:\n");
-            String str = "";
-            for (int y = 0; y < 9; y++)
-            {
-                for (int x = 0; x < 9; x++)
-                {
-                    str += map[x,y] + " ";
-                }
-                Console.Write(str+ "\n");
-                str = "";
-            }*/
-
         }
 
-        private void testSolve()
-        {
-            map = new int[,]
-            {
-                {7,2,0,0,0,3,0,5,0},
-                {4,5,8,9,0,0,6,0,0},
-                {0,1,9,6,0,0,0,0,0},
-                {0,0,0,0,3,4,1,8,0},
-                {0,0,5,0,0,0,4,0,0},
-                {0,4,2,1,9,0,0,0,0},
-                {0,0,0,0,0,9,7,4,0},
-                {0,0,4,0,0,1,9,2,8},
-                {0,7,0,8,0,0,0,1,6}
-            };
-
-            /*
-            map = new int[,]
-            {
-                {
-                    0,5,0,0,0,0,0,0,0
-                },
-                {
-                    2,0,0,0,3,0,5,7,4
-                },
-                {
-                    6,0,0,0,0,4,9,0,0
-                },
-                {
-                    8,0,7,0,0,1,2,5,0
-                },
-                {
-                    4,0,0,0,0,0,0,0,9
-                },
-                {
-                    0,1,6,3,0,0,4,0,7
-                },
-                {
-                    0,0,2,6,0,0,0,0,3
-                },
-                {
-                    3,4,8,0,2,0,0,0,5
-                },
-                {
-                    0,0,0,0,0,0,0,2,0
-                }
-            };*/
-
-            SudokuPuzzle puzzle = new SudokuPuzzle( map );
-            //puzzle.Verbose = true;
-            Console.Write( "The Puzzle it recieved is:\n" );
-            Console.Write( puzzle.ToString() + "\n" );
-
-
-            //Console.Write("The solution to the problem is:\n");
-            Console.Write( puzzle.solveText() );
-        }
-
+        /// <summary>
+        /// Method called when the clear button is pressed. Calls the clear method in each BigSquare
+        /// </summary>
+        /// <param name="sender">Button object sender</param>
+        /// <param name="e">Eventargs</param>
         private void Clear_Click( object sender, EventArgs e )
         {
             // Clear button
@@ -194,10 +156,27 @@ namespace SudokuSolver
             Solve_Button.Enabled = false;
             Check_Button.Enabled = false;
 
-            Verbose_Output.Lines = new String[1];
+            Output = new List<string>();
+            Verbose_Update();
+
             Verbose_CheckBox.Checked = false;
         }
 
+        /// <summary>
+        /// Adds the given string as a new entry in the Output list to be displayed in the verbose output
+        /// </summary>
+        /// <param name="str">String to add</param>
+        public static void Verbose_Add( String str )
+        {
+            Output.Add( str );
+            //Verbose_Update();
+        }
+
+        /// <summary>
+        /// Method called when the check button is pressed. Calls the checkValue method in each BigSquare
+        /// </summary>
+        /// <param name="sender">Button object sender</param>
+        /// <param name="e">Eventargs</param>
         private void Check_Click( object sender, EventArgs e )
         {
             // Check button
@@ -206,9 +185,14 @@ namespace SudokuSolver
                 Squares[i].checkValues( setup().getSquareValues( i ) );
             }
 
-            Verbose_Output.Lines = Output.ToArray();
+            Verbose_Update();
         }
 
+        /// <summary>
+        /// Called when the lock checkbox is toggled. Calls the lock/unlockValues in each BigSquare
+        /// </summary>
+        /// <param name="sender">Checkbox object sender</param>
+        /// <param name="e">Eventargs</param>
         private void Lock_CheckedChanged( object sender, EventArgs e )
         {
             // Lock values
@@ -233,6 +217,11 @@ namespace SudokuSolver
             }
         }
 
+        /// <summary>
+        /// Called when the verbose checkbox is toggled. Hides/shows the verbose output
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Verbose_CheckBox_CheckedChanged( object sender, EventArgs e )
         {
             if ( Verbose_CheckBox.Checked )
@@ -245,12 +234,22 @@ namespace SudokuSolver
             }
         }
 
+        /// <summary>
+        /// Launches the aboutbox
+        /// </summary>
+        /// <param name="sender">Sender</param>
+        /// <param name="e">Eventargs</param>
         private void aboutToolStripMenuItem_Click( object sender, EventArgs e )
         {
             AboutBox about = new AboutBox();
             about.ShowDialog();
         }
 
+        /// <summary>
+        /// Exits the program
+        /// </summary>
+        /// <param name="sender">Sender</param>
+        /// <param name="e">Eventargs</param>
         private void exitToolStripMenuItem_Click( object sender, EventArgs e )
         {
             this.Close();
